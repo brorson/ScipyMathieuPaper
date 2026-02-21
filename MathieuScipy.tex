@@ -119,7 +119,7 @@ Note the notation used for order label $m$.  The order label is configured so th
 \end{itemize}
 This notation is used so that the index remains $m = 0, 1, 2, 3, ...$ for all cases.  This notation is used on the DLMF \cite{DLMF} and I use this notation in the remainder of this paper.
 
-At this point the Fourier coefficients $A_n$ and $B_n$ are unknown -- we need to compute them in order to evaluate the Fourier sums.
+At this point the Fourier coefficients $A^{(m)}_k$ and $B^{(m)}_k$ are unknown -- we need to compute them in order to evaluate the Fourier sums.
 There are two potential methods to calculate these Fourier coefficients.  In one, a recurrence relation is derived relating the coefficients to each other.  This recurrence relation is then manipulated into a function $T (a, q)$ possessing many zeros as a function of eigenvalue $a$.  For fixed $q$ a rootfinder may then be used to identify the values of $a$ for which $T (a, q) = 0$.   Details about this method are presented in Brimacombe et al's review \cite{brimacombe2021} and in the original work by Blanch \cite{blanch1946}.  This method has the problem that it is very difficult to use a rootfinder to find specific roots of a function with many closely-spaced roots.  Presented with closely-spaced roots, most rootfinders can mistakenly jump from one root to a different one while trying to find a solution.  This behavior is the root cause of the bugs displayed by the Zhang and Jin implementation \cite{xsf_zhang}.
 
 In the second method, the recurrence relations are used to construct a matrix eigendecomposition problem.  Then the eigenvectors of the matrix are the desired Fourier coefficients and its eigenvalues are the Mathieu characteristic values corresponding to each order \cite{shin2025,brimacombe2021}.  There are four different eigendecompositions corresponding to the four different Mathieu functions.  For even $ce_{2m}$
@@ -306,7 +306,7 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 	\end{split}
 	\label{eq:MseFourierSum}
 \end{equation}
-In (\ref{eq:MceFourierSum}) above, $\varepsilon_0 = 2$ and $\varepsilon_c = 1$ for $ c = 1, 2, 3, ...$.  We also use the shorthand notation $i = 1$ or $2$ so that $Z^{(1)}_i(z) = J^{(1)}_i(z)$ and $Z^{(2)}_i(z)= Y^{(2)}_i(z)$.  This denotes that the Bessel $J$ function is used in the sum for modified functions of the first kind while $Y$ is used for modified functions of the second kind.
+In (\ref{eq:MceFourierSum}) above, $\varepsilon_0 = 2$ and $\varepsilon_c = 1$ for $ c = 1, 2, 3, ...$.  We also use the shorthand notation $i = 1$ or $2$ so that $Z^{(1)}_k(z) = J^{(1)}_k(z)$ and $Z^{(2)}_k(z)= Y^{(2)}_k(z)$.  This denotes that the Bessel $J_k$ function is used in the sum for modified functions of the first kind while $Y_k$ is used for modified functions of the second kind.
 
 Brimacombe et al. comment that these expansions are ``preposterous'' and ``alien'' but yield the best computational results \cite{brimacombe2021}.  Of importance to note is the order offset $c$, an integer which may be chosen at will.  That is, the series expansions (\ref{eq:MceFourierSum}) -- (\ref{eq:MseFourierSum}) are theoretically valid for any integer $c$, but some $c$ values provide faster convergence than others.  Therefore, choosing an optimal value for $c$ is part of the computational strategy required to achieve good accuracy \cite{shin2025}.
 
@@ -712,7 +712,7 @@ computed for different $m$ and $q$ values.
  
  \FloatBarrier
  
- \subsection{Check of first deriv using finite differences}
+ \subsection{Check of first derivative using finite differences}
  This implementation of the Mathieu functions returns both the function value and its first
  derivative.  As a sanity check, we computed a first derivative approximation from the
  function value using a first-order finite difference formula,
@@ -726,7 +726,7 @@ The residual is
 r = \Delta S_n - S'_n
 \label{eq:FirstDerivResidual}
 \end{equation}
-where $S'$ is the first derivative returned from the implementation.  For the angular functions we plot the absolute RMS error of the residual per \cref{eq:AbsErr} in \cref{fig:FirstDerivAngFcns}.
+where $S'$ is the first derivative returned from the implementation.  For the angular functions we sample over the domain $[-\pi, \pi]$ and plot the absolute RMS error of the residual per \cref{eq:AbsErr} in \cref{fig:FirstDerivAngFcns}.
   \begin{figure}[htb]
 	\centering
 	\begin{subfigure}{0.45\textwidth}
@@ -746,7 +746,7 @@ where $S'$ is the first derivative returned from the implementation.  For the an
 
 \FloatBarrier
 
-For the radial functions we plot the relative RMS error of the residual per \cref{eq:RelErr} in \cref{fig:FirstDerivMod1Fcns} -- \cref{fig:FirstDerivMod2Fcns}.
+For the radial functions we sample over $[XX,XX]$ and plot the relative RMS error of the residual per \cref{eq:RelErr} in \cref{fig:FirstDerivMod1Fcns} -- \cref{fig:FirstDerivMod2Fcns}.
 \begin{figure}[htb]
 	\centering
 	\begin{subfigure}{0.45\textwidth}
