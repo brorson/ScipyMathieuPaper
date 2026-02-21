@@ -30,7 +30,7 @@
 The Mathieu Functions are a set of special functions of some importance in physics.  They naturally emerge when solving the Helmholtz equation in elliptic coordinates through separation of variables.   
 They also appear in celestial mechanics when analyzing perturbed planetary motion.  As such, it is important to be able to calculate values for the Mathieu Functions using commonly-available numerical packages.  This paper describes a new implementation of the Mathieu functions for SciPy written in C++ and compatible with SciPy's xsf (special functions) library.
 
-The derivation and properties of the Mathieu functions are covered extremely well in the literature, most recently in reviews by Shin \cite{shin2025} and Brimacombe et al. \cite{brimacombe2021}.  Properties of the Mathieu functions are also captured by an entire chapter of the DLMF \cite{DLMF}.  Many additional papers and books also provide detailed information about methods to calculate them \cite{}.  Therefore, I will provide a summary introduction to the Mathieu functions sufficient to understand the new implementation, but direct the reader seeking more details to the literature referenced in the bibliography.
+The derivation and properties of the Mathieu functions are covered extremely well in the literature, most recently in reviews by Shin \cite{shin2025} and Brimacombe et al. \cite{brimacombe2021}.  Properties of the Mathieu functions are also captured by an entire chapter of the DLMF \cite{DLMF}.  Many additional papers and books also provide detailed information about methods to calculate them, including (but not limited to) \cite{VanBuren2007,cojocaru2008,Bibby2013,Coisson2009,GutierrezVega2003}.  Therefore, I will provide a summary introduction to the Mathieu functions sufficient to understand the new implementation, but direct the reader seeking more details to the literature referenced in the bibliography.
 
 Our point of departure is the Helmholtz equation in elliptical coordinates.  The two-dimensional elliptical coordinate system is shown in \cref{fig:EllipticCoordSys}.  
 \begin{figure}[h]
@@ -84,11 +84,11 @@ and radial:
 \end{equation}
 The variable $a$ is the separation constant -- it corresponds to an eigenvalue to be determined during solution of these equations.  It is frequently called the ``Mathieu characteristic value''.  
 Equation (\ref{eq:MathieuAngular}) describes the behavior of $U(u,v)$ in the angular direction.  The solutions are the ordinary Mathieu functions, commonly written as $ce(v, q)$ and $se(v, q)$.  They take two args:  The angular coordinate $v$ and the parameter $q$.
-Similarly, equation (\ref{eq:MathieuRadial}) describes the behavior of $U(u,v)$ in the radial direction.  The solutions are the modified Mathieu functions, commonly written as $Mc(v, q)$ and $Ms(v, q)$.  They also take two args:  The radial coordinate $u$ and the parameter $q$.
+Similarly, equation (\ref{eq:MathieuRadial}) describes the behavior of $U(u,v)$ in the radial direction.  The solutions are the modified Mathieu functions, commonly written as $Mc(u, q)$ and $Ms(u, q)$.  They also take two args:  The radial coordinate $u$ and the parameter $q$.
 
 Equations  (\ref{eq:MathieuAngular}) and (\ref{eq:MathieuRadial}) are of Sturm-Liouville form.  Therefore, upon imposing boundary conditions we expect to find a set of solutions $ce_m(v, q)$ and $se_m(v, q)$ and corresponding eigenvalues $a_m$.  That is, there is an infinite set of solutions to (\ref{eq:MathieuAngular}) and (\ref{eq:MathieuRadial}) indexed by order $m$; taken all together they form the set of Mathieu Functions.
 
-The original implementation of the Mathieu Functions used by SciPy was written by S.~Zhang and J.-M.~Jin, \cite{zhang1996} and documented in their book ``Computation of Special Functions'' \cite{zhang1996}.  That implementation worked fine for low-order functions, but evidenced bugs (incorrect returns) starting with $m = 6$ and continuing with high-order functions \cite{xsf:issue47}.  This was brought to my attention by my undergraduate REU students in Summer 2024.  My new implementation of the Mathieu Functions is meant to fix the buggy behavior by using an up-to-date computational method as described by many recent papers.  In particular, my implementation closely follows the ideas presented in Shin's review article \cite{shin2025}.  I also made sure that my function implementations and nomenclature mirrored that presented by the DLMF \cite{DLMF} since the DLMF attempts to provide a standard description of the functions to help tame the chaos presented by the many different Mathieu descriptions in the open literature \cite{shin2025}.
+The original implementation of the Mathieu Functions used by SciPy was written by S.~Zhang and J.-M.~Jin, \cite{xsf_zhang} and documented in their book ``Computation of Special Functions'' \cite{zhang1996}.  That implementation worked fine for low-order functions, but evidenced bugs (incorrect returns) starting with $m = 6$ and continuing with high-order functions \cite{xsf:issue47}.  This was brought to my attention by my undergraduate REU students in Summer 2024.  My new implementation of the Mathieu Functions is meant to fix the buggy behavior by using an up-to-date computational method as described by many recent papers.  In particular, my implementation closely follows the ideas presented in Shin's review article \cite{shin2025}.  I also made sure that my function implementations and nomenclature mirrored that presented by the DLMF \cite{DLMF} since the DLMF attempts to provide a standard description of the functions to help tame the chaos presented by the many different Mathieu descriptions in the open literature \cite{shin2025}.
 
 %------------------------------------------------------
 \section{Calculating the Mathieu Functions}
@@ -97,20 +97,20 @@ The original implementation of the Mathieu Functions used by SciPy was written b
 \subsection{Angular Functions}
 As is traditional, we start with the angular functions.  These functions must be periodic since they repeat each time one takes a full elliptical walk around the coordinate system presented in \cref{fig:EllipticCoordSys}.  (A second set of non-periodic Mathieu functions also exists, but is of less practical interest and is not computed in either the old or the new SciPy implementation.)  Since they are periodic, we may expand them into a Fourier series,
 \begin{equation}
-	ce_{2m}(v,q) = \sum_{k=0}^\infty  A^{(2m)}_{2k}(q) \cos 2k v 
+	ce_{2m}(q,v) = \sum_{k=0}^\infty  A^{(2m)}_{2k}(q) \cos 2k v 
 	\label{eq:ceeFourierSum}
 \end{equation}
 \begin{equation}
-	ce_{2m+1}(v,q) = \sum_{k=0}^\infty  A^{(2m+1)}_{2k+1}(q) \cos (2k+1) v 
+	ce_{2m+1}(q,v) = \sum_{k=0}^\infty  A^{(2m+1)}_{2k+1}(q) \cos (2k+1) v 
 \end{equation}
 \begin{equation}
-	se_{2m+1}(v,q) = \sum_{k=0}^\infty  B^{(2m+1)}_{2k+1}(q) \sin (2k+1) v 
+	se_{2m+1}(q,v) = \sum_{k=0}^\infty  B^{(2m+1)}_{2k+1}(q) \sin (2k+1) v 
 \end{equation}
 \begin{equation}
-	se_{2m+2} = \sum_{k=0}^\infty  B^{(2m+2)}_{2k+2}(q) \sin (2k+2) v 
+	se_{2m+2}(q,v) = \sum_{k=0}^\infty  B^{(2m+2)}_{2k+2}(q) \sin (2k+2) v 
 	\label{eq:seeFourierSum}
 \end{equation}
-Note the notation labeling order $m$.  The order index is configured so the valid functions are:
+Note the notation used for order label $m$.  The order label is configured so the valid functions are:
 \begin{itemize}
 	\item Even functions of even order: $ce_{0}, ce_{2}, ce_{4}, ce_{6}, ...$
 	\item Even functions of odd order  $ce_{1}, ce_{3}, ce_{5}, ce_{7}, ...$
@@ -122,7 +122,7 @@ This notation is used so that the index remains $m = 0, 1, 2, 3, ...$ for all ca
 At this point the Fourier coefficients $A_n$ and $B_n$ are unknown -- we need to compute them in order to evaluate the Fourier sums.
 There are two potential methods to calculate these Fourier coefficients.  In one, a recurrence relation is derived relating the coefficients to each other.  This recurrence relation is then manipulated into a function $T (a, q)$ possessing many zeros as a function of eigenvalue $a$.  For fixed $q$ a rootfinder may then be used to identify the values of $a$ for which $T (a, q) = 0$.   Details about this method are presented in Brimacombe et al's review \cite{brimacombe2021} and in the original work by Blanch \cite{blanch1946}.  This method has the problem that it is very difficult to use a rootfinder to find specific roots of a function with many closely-spaced roots.  Presented with closely-spaced roots, most rootfinders can mistakenly jump from one root to a different one while trying to find a solution.  This behavior is the root cause of the bugs displayed by the Zhang and Jin implementation \cite{xsf_zhang}.
 
-In the second method, the recurrence relations are used to construct a matrix eigendecomposition problem.  Then the eigenvectors of the matrix are the desired Fourier coefficients and its eigenvalues are the Mathieu characteristic values corresponding to each order \cite{}, \cite{}.  There are four different eigendecompositions corresponding to the four different Mathieu functions.  For even $ce_{2m}$
+In the second method, the recurrence relations are used to construct a matrix eigendecomposition problem.  Then the eigenvectors of the matrix are the desired Fourier coefficients and its eigenvalues are the Mathieu characteristic values corresponding to each order \cite{shin2025,brimacombe2021}.  There are four different eigendecompositions corresponding to the four different Mathieu functions.  For even $ce_{2m}$
 \begin{equation}
 	\begin{bmatrix}
 		0 & \sqrt{2} q & 0 & 0 & 0 & \dots \\
@@ -243,23 +243,23 @@ and for $se_{2m+2}$
 Solving the eigenvalue equations (\ref{eq:eemat}) -- (\ref{eq:oomat}) provides both the Mathieu characteristic $a$, $b$ respectively for the even, odd functions as well as the Fourier expansion coefficients $A$ and $B$ used to compute the function value via (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  This is the method I adopted for my Mathieu implementation.
 
 \subsection{Angular Function Derivatives}
-Knowing the derivatives of the angular functions is useful for solving the Helmholtz equation subject to Neumann boundary conditions, amongst other uses.  Fortunately, the derivatives of $ce$ and $se$ are easily found by differentiating the Fourier series (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  The same coefficients found from (\ref{eq:eemat}) -- (\ref{eq:oomat}) are used in the derivative sum.  Here are the derivatives:
+Similar to Zhang and Jin's Mathieu implemnetation, my implementation also returns the first derivatives.  Knowing the derivatives of the angular functions is useful for solving the Helmholtz equation subject to Neumann boundary conditions, amongst other uses.  Fortunately, the derivatives of $ce$ and $se$ are easily found by differentiating the Fourier series (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  The same coefficients found from (\ref{eq:eemat}) -- (\ref{eq:oomat}) are used in the derivative sum.  I used the following expressions for the derivatives:
 \begin{equation}
 	\frac{d}{dv}
-	ce_{2m}(v,q) = -\sum_{k=0}^\infty  A^{(2m)}_{2k}(q) (2 k) \sin 2k v 
+	ce_{2m}(q,v) = -\sum_{k=0}^\infty  A^{(2m)}_{2k}(q) (2 k) \sin 2k v 
 	\label{eq:ceeFourierSumDeriv}
 \end{equation}
 \begin{equation}
 	\frac{d}{dv}
-	ce_{2m+1}(v,q) = -\sum_{k=0}^\infty  A^{(2m+1)}_{2k+1}(q) (2k+1) \sin (2k+1) v 
+	ce_{2m+1}(q,v) = -\sum_{k=0}^\infty  A^{(2m+1)}_{2k+1}(q) (2k+1) \sin (2k+1) v 
 \end{equation}
 \begin{equation}
 	\frac{d}{dv}
-	se_{2m+1}(v,q) = \sum_{k=0}^\infty  B^{(2m+1)}_{2k+1}(q) (2k+1) \cos (2k+1) v 
+	se_{2m+1}(q,v) = \sum_{k=0}^\infty  B^{(2m+1)}_{2k+1}(q) (2k+1) \cos (2k+1) v 
 \end{equation}
 \begin{equation}
 	\frac{d}{dv}
-	se_{2m+2} = \sum_{k=0}^\infty  B^{(2m+2)}_{2k+2}(q) (2k+2) \cos (2k+2) v 
+	se_{2m+2}(q,v) = \sum_{k=0}^\infty  B^{(2m+2)}_{2k+2}(q) (2k+2) \cos (2k+2) v 
 	\label{eq:seeFourierSumDeriv}
 \end{equation}
 
@@ -271,8 +271,8 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 		Mc^{(i)}_{2m}(q,u) &= \frac{(-1)^m}{\varepsilon_c} 
 		\sum_{k=0}^\infty  (-1)^k
 		\frac{A^{(2m)}_{2k}(q)}{A^{(2m)}_{2c}(q)} \\
-		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z_{k+c}(\sqrt{q} e^{u}) \\
-		&\qquad\qquad + J_{k+c}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Bigg)
+		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c}(\sqrt{q} e^{u}) \\
+		&\qquad\qquad + J_{k+c}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Bigg)
 	\end{split}
 	\label{eq:MceFourierSum}
 \end{equation}
@@ -281,8 +281,8 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 		Mc^{(i)}_{2m+1}(q,u) &= (-1)^m
 		\sum_{k=0}^\infty  (-1)^k
 		\frac{A^{(2m+1)}_{2k+1}(q)}{A^{(2m+1)}_{2c+1}(q)} \\
-		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+1}(\sqrt{q} e^{u}) \\
-		&\qquad\qquad + J_{k+c+1}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Bigg)
+		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+1}(\sqrt{q} e^{u}) \\
+		&\qquad\qquad + J_{k+c+1}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Bigg)
 	\end{split}
 	\label{eq:McoFourierSum}
 \end{equation}
@@ -291,8 +291,8 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 		Ms^{(i)}_{2m+1}(q,u) &= (-1)^m
 		\sum_{k=0}^\infty  (-1)^k
 		\frac{B^{(2m+1)}_{2k+1}(q)}{B^{(2m+1)}_{2c+1}(q)} \\
-		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+1}(\sqrt{q} e^{u}) \\
-		&\qquad\qquad - J_{k+c+1}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Bigg)
+		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+1}(\sqrt{q} e^{u}) \\
+		&\qquad\qquad - J_{k+c+1}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Bigg)
 	\end{split}
 	\label{eq:MsoFourierSum}
 \end{equation}
@@ -301,8 +301,8 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 		Ms^{(i)}_{2m+2}(q,u) &= (-1)^m
 		\sum_{k=0}^\infty  (-1)^k
 		\frac{B^{(2m+2)}_{2k+2}(q)}{B^{(2m+2)}_{2c+2}(q)} \\
-		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+2}(\sqrt{q} e^{u}) \\
-		&\qquad\qquad - J_{k+c+2}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Bigg)
+		&\quad \times \Bigg( J_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+2}(\sqrt{q} e^{u}) \\
+		&\qquad\qquad - J_{k+c+2}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Bigg)
 	\end{split}
 	\label{eq:MseFourierSum}
 \end{equation}
@@ -321,10 +321,10 @@ Similar to the angular function derivatives, the radial function derivatives are
 	\frac{A^{(2m)}_{2k}(q)}{A^{(2m)}_{2c}(q)} \\
 	\times 
 	\Bigg(
-	e^{u}  \Big( J_{k-c}(\sqrt{q} e^{-u}) Z'_{k+c}(\sqrt{q} e^{u}) 
-	+ J_{k+c}(\sqrt{q} e^{-u}) Z'_{k-c}(\sqrt{q} e^{u}) \Big) \\
-	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z_{k+c}(\sqrt{q} e^{u}) 
-	+ J'_{k+c}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Big)
+	e^{u}  \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c}(\sqrt{q} e^{u}) 
+	+ J_{k+c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
+	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c}(\sqrt{q} e^{u}) 
+	+ J'_{k+c}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Big)
     \Bigg)
 	\label{eq:McedFourierSum}
 \end{multline}
@@ -336,10 +336,10 @@ Similar to the angular function derivatives, the radial function derivatives are
 	\frac{A^{(2m+1)}_{2k+1}(q)}{A^{(2m+1)}_{2c+1}(q)} \\
 	\times 
 	\Bigg(
-	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) Z'_{k+c+1}(\sqrt{q} e^{u}) 
-	+ J_{k+c+1}(\sqrt{q} e^{-u}) Z'_{k-c}(\sqrt{q} e^{u}) \Big) \\
-	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+1}(\sqrt{q} e^{u}) 
-	+ J'_{k+c+1}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Big)
+	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c+1}(\sqrt{q} e^{u}) 
+	+ J_{k+c+1}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
+	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+1}(\sqrt{q} e^{u}) 
+	+ J'_{k+c+1}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Big)
 	\Bigg)
 	\label{eq:McodFourierSum}
 \end{multline}
@@ -349,10 +349,10 @@ Similar to the angular function derivatives, the radial function derivatives are
 	\sqrt{q} \sum_{k=0}^\infty  (-1)^k
 	\frac{B^{(2m+1)}_{2k+1}(q)}{B^{(2m+1)}_{2c+1}(q)} \\
 	\Bigg(
-	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) Z'_{k+c+1}(\sqrt{q} e^{u}) 
-	- J_{k+c+1}(\sqrt{q} e^{-u}) Z'_{k-c}(\sqrt{q} e^{u}) \Big) \\
-	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+1}(\sqrt{q} e^{u}) 
-	- J'_{k+c+1}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Big)
+	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c+1}(\sqrt{q} e^{u}) 
+	- J_{k+c+1}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
+	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+1}(\sqrt{q} e^{u}) 
+	- J'_{k+c+1}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Big)
 	\Bigg)
 	\label{eq:MsodFourierSum}
 \end{multline}
@@ -362,10 +362,10 @@ Similar to the angular function derivatives, the radial function derivatives are
 		\sqrt{q} \sum_{k=0}^\infty  (-1)^k
 		\frac{B^{(2m+2)}_{2k+2}(q)}{B^{(2m+2)}_{2c+2}(q)} \\
 	    \Bigg(
-    	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) Z'_{k+c+2}(\sqrt{q} e^{u}) 
-    	+ J_{k+c+2}(\sqrt{q} e^{-u}) Z'_{k-c}(\sqrt{q} e^{u}) \Big) \\
-    	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z_{k+c+2}(\sqrt{q} e^{u}) 
-    	- J'_{k+c+2}(\sqrt{q} e^{-u}) Z_{k-c}(\sqrt{q} e^{u}) \Big)
+    	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c+2}(\sqrt{q} e^{u}) 
+    	+ J_{k+c+2}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
+    	- e^{-u} \Big( J'_{k-c}(\sqrt{q} e^{-u}) Z^{(i)}_{k+c+2}(\sqrt{q} e^{u}) 
+    	- J'_{k+c+2}(\sqrt{q} e^{-u}) Z^{(i)}_{k-c}(\sqrt{q} e^{u}) \Big)
     	\Bigg)
 	\label{eq:MsedFourierSum}
 \end{multline}
@@ -452,13 +452,13 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 	\centering
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieuce2n.png}
+		\includegraphics[width=\textwidth]{Mathieuce2m.png}
 		\caption{Mathieu $ce_{2m}$}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieuce2np1.png}
+		\includegraphics[width=\textwidth]{Mathieuce2mp1.png}
 		\caption{Mathieu $ce_{2m+1}$}
 	\end{subfigure}
 	\caption{Even angular Mathieu functions $ce$.}
@@ -468,14 +468,14 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 	\centering
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieuse2n.png}
-		\caption{Mathieu $se_{2m}$}
+		\includegraphics[width=\textwidth]{Mathieuse2mp1.png}
+		\caption{Mathieu $se_{2m+1}$}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}{0.45\textwidth}
+		\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieuse2np1.png}
-		\caption{Mathieu $se_{2m+1}$}
+		\includegraphics[width=\textwidth]{Mathieuse2m.png}
+		\caption{Mathieu $se_{2m+2}$}
 	\end{subfigure}
 	\caption{Odd angular Mathieu functions $se$.}
 	\label{fig:Mathieuse}
@@ -484,13 +484,13 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 	\centering
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieumc12n.png}
+		\includegraphics[width=\textwidth]{Mathieumc12m.png}
 		\caption{Mathieu $Mc^{(1)}_{2m}$}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieumc12np1.png}
+		\includegraphics[width=\textwidth]{Mathieumc12mp1.png}
 		\caption{Mathieu $Mc^{(1)}_{2m+1}$}
 	\end{subfigure}
 	\caption{Even radial Mathieu functions of the first kind $Mc^{(1)}$.}
@@ -498,16 +498,16 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 \end{figure}
 \begin{figure}[htbp]
 	\centering
-	\begin{subfigure}{0.45\textwidth}
+		\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieums12n.png}
-		\caption{Mathieu $Ms^{(1)}_{2m}$}
+		\includegraphics[width=\textwidth]{Mathieums12mp1.png}
+		\caption{Mathieu $Ms^{(1)}_{2m+1}$}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieums12np1.png}
-		\caption{Mathieu $Ms^{(1)}_{2m+1}$}
+		\includegraphics[width=\textwidth]{Mathieums12m.png}
+		\caption{Mathieu $Ms^{(1)}_{2m+2}$}
 	\end{subfigure}
 	\caption{Odd radial Mathieu functions of the first kind $Ms^{(1)}$.}
 	\label{fig:Mathieums1}
@@ -516,13 +516,13 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 	\centering
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieumc22n.png}
+		\includegraphics[width=\textwidth]{Mathieumc22m.png}
 		\caption{Mathieu $Mc^{(2)}_{2m}$}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieumc22np1.png}
+		\includegraphics[width=\textwidth]{Mathieumc22mp1.png}
 		\caption{Mathieu $Mc^{(2)}_{2m+1}$}
 	\end{subfigure}
 	\caption{Even radial Mathieu functions of the second kind $Mc^{(2)}$.}
@@ -530,18 +530,18 @@ Plots of the Mathieu functions and derivatives computed using the new implementa
 \end{figure}
 \begin{figure}[htbp]
 	\centering
-	\begin{subfigure}{0.45\textwidth}
+		\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieums22n.png}
-		\caption{Mathieu $Ms^{(2)}_{2m}$}
+		\includegraphics[width=\textwidth]{Mathieums22mp1.png}
+		\caption{Mathieu $Ms^{(2)}_{2m+1}$}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Mathieums22np1.png}
-		\caption{Mathieu $Ms^{(2)}_{2m+1}$}
+		\includegraphics[width=\textwidth]{Mathieums22m.png}
+		\caption{Mathieu $Ms^{(2)}_{2m+2}$}
 	\end{subfigure}
-	\caption{Odd radial Mathieu functions of the first kind $Ms^{(2)}$.}
+	\caption{Odd radial Mathieu functions of the second kind $Ms^{(2)}$.}
 	\label{fig:Mathieums2}
 \end{figure}
 
@@ -577,7 +577,7 @@ Validating the correctness of a library of math functions is equally important a
 The angular differential equation \cref{eq:MathieuAngular} may be rewritten 
 \begin{equation}
 	r = \frac{\partial^2 S}{\partial v^2}
-	+ (a - 2 q \cos 2v ) S
+	- (a - 2 q \cos 2v ) S
 	\label{eq:RoundTripAngularODE}
 \end{equation}
 where $r$ is a residual.  Ideally $r=0$, but numerical errors usually prevent this ideal case.  To characterize the error we discretize this equation using a finite-difference formula for the second derivative.  We used a 6th order approximation for the second derivative operator,
@@ -587,7 +587,7 @@ where $r$ is a residual.  Ideally $r=0$, but numerical errors usually prevent th
 \end{multline}
 where $\Delta^2$ denotes the discretized second-second derivative operator and $h$ is the stepsize.  Using $\Delta^2$ we have an approximate Mathieu angular equation, 
 \begin{equation}
-	r_n = \Delta^2 S_n + (a - 2 q \cos 2 v_n ) S_n
+	r_n = \Delta^2 S_n - (a - 2 q \cos 2 v_n ) S_n
 	\label{eq:RoundTripResidualAngular}
 \end{equation}
 Testing using this formula involves selecting a Mathieu order $m$ and parameter $q$, then computing the corresponding eigenvalue $a = a_m(q)$.  We then evaluate (\cref{eq:RoundTripResidualAngular}) to obtain the $r_n$ for varying $m$ and $q$.  Then we compute the absolute RMS error of this residual,
@@ -619,7 +619,7 @@ where $N$ is the number of points computed.  For the angular Mathieus we sample 
 
 A similar check may be performed for the modified functions by using the approximate Mathieu radial equation,
 \begin{equation}
-	r = \Delta^2 S_n - (a - 2 q \cosh 2 u_n ) S_n
+	r = \Delta^2 S_n + (a - 2 q \cosh 2 u_n ) S_n
 	\label{eq:RoundTripResidualRadial}
 \end{equation}
 However, in this case the functions are singular for $u \rightarrow 0$, and the breakpoint where the singularity ends increases with increasing $m$.  This is evident in the plots \cref{fig:Mathieumc1} -- \cref{fig:Mathieums2}.  Therefore, instead of plotting absolute error (which is highly sensitive to the singularity) we plot the relative RMS error
@@ -627,7 +627,7 @@ However, in this case the functions are singular for $u \rightarrow 0$, and the 
 	err = \sqrt{ \frac{1}{N} \sum_{n=1}^N \left( r_n / S_n \right)^2 }
 	\label{eq:RelErr}
 \end{equation}
-For the radial Mathieus we sample the functions at 100 points in the domain $u_n = [1, 8]$.  This domain is chosen because the functions oscillate increasingly wildly as $u_n \rightarrow \infty$, so a finite-difference approximation becomes increasingly unreliable.  Moreover, the modified functions of the second kind go to infinity for $u_n \rightarrow 0$, so we need to cut off the sample domain at the low end.
+For the radial Mathieus we sample the functions at 100 points in the domain $u = [1, 8]$.  This domain is chosen because the functions oscillate increasingly wildly as $u_n \rightarrow \infty$, so a finite-difference approximation becomes increasingly unreliable.  Moreover, the modified functions of the second kind go to infinity for $u_n \rightarrow 0$, so we need to cut off the sample domain at the low end.
 
 One could certainly quibble that plotting relative error hides inaccuracy.  However, the goal of these plots is to show that the implementation's output remains sane while the function itself is going singular.  Demonstrating the relative error remains small compared to the function itself which is zooming down to $-\infty$ is a valid characterization of sanity.  The relative error plots are shown in \cref{fig:RTErrMod1} -- \cref{fig:RTErrMod2}.
 \begin{figure}[htb]
@@ -690,7 +690,7 @@ computed for different $m$ and $q$ values.
  		\includegraphics[width=\textwidth]{wronskian_Ms1_Ms2.png}
 		\caption{Wronskian err $\mathcal{W}( Ms^{(1)}_m, Ms^{(2)}_m) - 2/\pi$.}
  	\end{subfigure}
- 	\caption{Absolute Wronskian errors between modified functions of the same handedness (even, odd).}
+ 	\caption{Absolute RMS errors of Wronskian between modified functions of the same handedness (even, odd).}
  	\label{fig:WronskianSame}
  \end{figure}
   \begin{figure}[htb]
@@ -706,7 +706,7 @@ computed for different $m$ and $q$ values.
  		\includegraphics[width=\textwidth]{wronskian_Ms1_Mc2.png}
  		\caption{Wronskian err $\mathcal{W}( Ms^{(1)}_m, Mc^{(2)}_m) - 2/\pi$.}
  	\end{subfigure}
- 	\caption{Absolute Wronskian errors between modified functions of opposite handedness.}
+ 	\caption{Absolute RMS errors of Wronskian between modified functions of opposite handedness.}
  	\label{fig:WronskianOpposite}
  \end{figure}
  
@@ -819,7 +819,8 @@ Note that Shin plots the error in dB units.
 Dr. Shin kindly provided a plot produced when running his test function on my Mathieu implementation; his plot is shown in \cref{ShinFigure} below.
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.5\columnwidth]{ShinTestFigure.png}
+%	\includegraphics[width=0.5\columnwidth]{ShinTestFigure.png}
+	\includegraphics[width=0.5\columnwidth]{NoImage.jpg}
 	\caption{Error plot produced using \cref{eq:ShinTest} and \cref{eq:ShinError}}
 	\label{fig:ShinFigure}
 \end{figure}
@@ -862,7 +863,36 @@ Available: \url{https://arxiv.org/abs/2008.01812}
 NIST Digital Library of Mathematical Functions, 
 \url{https://dlmf.nist.gov/28}
 (Mathieu Functions and Hill's Equation).
-	
+
+\bibitem{VanBuren2007}
+A.~L. Van~Buren and J.~E. Boisvert,
+``Accurate calculation of the modified {M}athieu functions of integer order,''
+\textit{Quart.\ Appl.\ Math.}, vol.~65, no.~1, pp.~1--23, Mar.\ 2007.
+
+\bibitem{cojocaru2008}
+E.~Cojocaru,
+``Mathieu functions computational toolbox implemented in Matlab,''
+arXiv preprint arXiv:0811.1970, 2008.
+Available: \url{https://arxiv.org/abs/0811.1970}
+
+\bibitem{Bibby2013}
+M.~M. Bibby and A.~F. Peterson,
+\textit{Accurate Computation of Mathieu Functions},
+Synthesis Lectures on Computational Electromagnetics,
+Springer, Cham, 2013.
+
+\bibitem{Coisson2009}
+R.~Co\"isson, G.~Vernizzi, and X.~Yang,
+``Mathieu functions and numerical solutions of the {M}athieu equation,''
+in \textit{Proc. 2009 IEEE International Workshop on Open-Source Software
+	for Scientific Computation (OSSC)}, Guiyang, China, 2009, pp.~3--10.
+
+\bibitem{GutierrezVega2003}
+J.~C. Guti\'errez-Vega, R.~M. Rodr\'iguez-Dagnino, M.~A. Meneses-Nava,
+and S.~Ch\'avez-Cerda,
+``{M}athieu functions, a visual approach,''
+\textit{Am.\ J.\ Phys.}, vol.~71, no.~3, pp.~233--242, Mar.\ 2003.
+
 \bibitem{xsf_zhang}
 S.~Zhang and J.-M.~Jin,
 ``Special functions library (special\_functions.f), ported to C++ by SciPy implementers as specfun.h,''
@@ -873,18 +903,7 @@ part of XSF: Extended Special Functions library.
 S.~Zhang and J.-M.~Jin,
 \emph{Computation of Special Functions}.
 New York: Wiley, 1996.
-	
-\bibitem{cojocaru2008}
-E.~Cojocaru,
-``Mathieu functions computational toolbox implemented in Matlab,''
-arXiv preprint arXiv:0811.1970, 2008.
-Available: \url{https://arxiv.org/abs/0811.1970}
-  
-\bibitem{blanch1946}
-G.~Blanch,
-``On the computation of Mathieu functions,''
-\emph{Journal of Mathematics and Physics},
-vol.~25, pp.~1--20, 1946.
+
 
 %\bibitem{abramowitz1964}
 %M.~Abramowitz and I.~A.~Stegun, Eds.,
@@ -900,11 +919,19 @@ GitHub repository scipy/xsf, 2024.
 (This bug report provides links to several other bug reports observing
 problems with the Mathieu function implementation.)
 
+  
+\bibitem{blanch1946}
+G.~Blanch,
+``On the computation of Mathieu functions,''
+\emph{Journal of Mathematics and Physics},
+vol.~25, pp.~1--20, 1946.
+
 \bibitem{ScipyMathieuTests}
 S.~Brorson, 
 ``ScipyMathieuTesting: Python programs to test Mathieu functions in Scipy,''
 2025--2026.
 [Online]. Available: \url{https://github.com/brorson/ScipyMathieuTesting}
+
 
 \bibitem{RTG-NEU-REU2024}
 RTG @ Northeastern,
