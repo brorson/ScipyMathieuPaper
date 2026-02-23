@@ -54,7 +54,7 @@ In this coordinate system Helmholtz's equation is
 	+
 	\frac{\partial^2 U}{\partial v^2}
 	\right\}
-	- k^2 U
+	+ k^2 U
 	= 0
 	\label{eq:WaveEqEllipse}
 \end{equation}
@@ -117,7 +117,7 @@ Note the notation used for order label $m$.  The order label is configured so th
 	\item Odd functions of odd order  $se_{1}, se_{3}, se_{5}, se_{7}, ...$
 	\item Odd functions of even order  $se_{2}, se_{4}, se_{6}, se_{8}, ...$
 \end{itemize}
-This notation is used so that the index remains $m = 0, 1, 2, 3, ...$ for all cases.  This notation is used on the DLMF \cite{DLMF} and I use this notation in the remainder of this paper.
+This notation is used so that the index remains $m = 0, 1, 2, 3, ...$ for all cases.  This notation is used in Shin \cite{shin2025} and the DLMF \cite{DLMF} .  I will use this notation in this paper when discussing specific Mathieu functions, but will just use the index $m$ when referring to the function order generically.
 
 At this point the Fourier coefficients $A^{(m)}_k$ and $B^{(m)}_k$ are unknown -- we need to compute them in order to evaluate the Fourier sums.
 There are two potential methods to calculate these Fourier coefficients.  In one, a recurrence relation is derived relating the coefficients to each other.  This recurrence relation is then manipulated into a function $T (a, q)$ possessing many zeros as a function of eigenvalue $a$.  For fixed $q$ a rootfinder may then be used to identify the values of $a$ for which $T (a, q) = 0$.   Details about this method are presented in Brimacombe et al's review \cite{brimacombe2021} and in the original work by Blanch \cite{blanch1946}.  This method has the problem that it is very difficult to use a rootfinder to find specific roots of a function with many closely-spaced roots.  Presented with closely-spaced roots, most rootfinders can mistakenly jump from one root to a different one while trying to find a solution.  This behavior is the root cause of the bugs displayed by the Zhang and Jin implementation \cite{xsf_zhang}.
@@ -243,7 +243,7 @@ and for $se_{2m+2}$
 Solving the eigenvalue equations (\ref{eq:eemat}) -- (\ref{eq:oomat}) provides both the Mathieu characteristic $a$, $b$ respectively for the even, odd functions as well as the Fourier expansion coefficients $A$ and $B$ used to compute the function value via (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  This is the method I adopted for my Mathieu implementation.
 
 \subsection{Angular Function Derivatives}
-Similar to Zhang and Jin's Mathieu implemnetation, my implementation also returns the first derivatives.  Knowing the derivatives of the angular functions is useful for solving the Helmholtz equation subject to Neumann boundary conditions, amongst other uses.  Fortunately, the derivatives of $ce$ and $se$ are easily found by differentiating the Fourier series (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  The same coefficients found from (\ref{eq:eemat}) -- (\ref{eq:oomat}) are used in the derivative sum.  I used the following expressions for the derivatives:
+Similar to Zhang and Jin's Mathieu implementation, my implementation also returns the first derivatives.  Knowing the derivatives of the angular functions is useful for solving the Helmholtz equation subject to Neumann boundary conditions, amongst other uses.  Fortunately, the derivatives of $ce$ and $se$ are easily found by differentiating the Fourier series (\ref{eq:ceeFourierSum}) -- (\ref{eq:seeFourierSum}).  The same coefficients found from (\ref{eq:eemat}) -- (\ref{eq:oomat}) are used in the derivative sum.  I used the following expressions for the derivatives:
 \begin{equation}
 	\frac{d}{dv}
 	ce_{2m}(q,v) = -\sum_{k=0}^\infty  A^{(2m)}_{2k}(q) (2 k) \sin 2k v 
@@ -306,7 +306,7 @@ The radial Mathieu functions come in two variants.  They are called the "modifie
 	\end{split}
 	\label{eq:MseFourierSum}
 \end{equation}
-In (\ref{eq:MceFourierSum}) above, $\varepsilon_0 = 2$ and $\varepsilon_c = 1$ for $ c = 1, 2, 3, ...$.  We also use the shorthand notation $i = 1$ or $2$ so that $Z^{(1)}_k(z) = J^{(1)}_k(z)$ and $Z^{(2)}_k(z)= Y^{(2)}_k(z)$.  This denotes that the Bessel $J_k$ function is used in the sum for modified functions of the first kind while $Y_k$ is used for modified functions of the second kind.
+In (\ref{eq:MceFourierSum}) above, $\varepsilon_0 = 2$ and $\varepsilon_c = 1$ for $ c = 1, 2, 3, ...$.  We also use the shorthand notation $i = 1$ or $2$ so that $Z^{(1)}_k(z) = J_k(z)$ and $Z^{(2)}_k(z)= Y_k(z)$.  This denotes that the Bessel $J_k$ function is used in the sum for modified functions of the first kind while $Y_k$ is used for modified functions of the second kind.
 
 Brimacombe et al. comment that these expansions are ``preposterous'' and ``alien'' but yield the best computational results \cite{brimacombe2021}.  Of importance to note is the order offset $c$, an integer which may be chosen at will.  That is, the series expansions (\ref{eq:MceFourierSum}) -- (\ref{eq:MseFourierSum}) are theoretically valid for any integer $c$, but some $c$ values provide faster convergence than others.  Therefore, choosing an optimal value for $c$ is part of the computational strategy required to achieve good accuracy \cite{shin2025}.
 
@@ -412,7 +412,7 @@ To compute the functions, the implementation proceeds by first building the appr
 Here are some details about the new implementation:
 \begin{itemize}
 	
-	\item The entry point to the implementation occurs in the function mathieu.h.  The API presented in this function matches that required by SciPy's existing implementation which supports ufuncs.  This function takes care of casting the calling args to types acceptable to the new implementation, performs some argument checks, then calls the new C++ implementation which lives in a subdirectory of xsf.  I purposely did not modify the API presented in this file for backwards compatibility with the existing SciPy functionality. 
+	\item The entry point to the implementation occurs in the file mathieu.h.  The API presented in this function matches that required by SciPy's existing implementation which supports ufuncs.  This function takes care of casting the calling args to types acceptable to the new implementation, performs some argument checks, then calls the new C++ implementation which lives in a subdirectory of xsf.  I purposely did not modify the API presented in this file for backwards compatibility with the existing SciPy functionality. 
 
 	\item The recursion matrix size $N$ is tied to the input order $m$ and parameter $q$.  For $q \le 1$ we use $N = m+25$.  The reason is that for small $q$ the Fourier coefficient magnitudes are sharply peaked at elements whose index lies around the order $m$.  Therefore, the eigenvalue equation must be solved using a matrix of at least that size.  For $q>1$ we use $N = m + 25 + 10log_{10}(q)$.  The reason is that for larger $q$ the Fourier coefficients become less sharply peaked around $m$, so more terms must be brought into the sum.  The exact expression used here was chosen empirically based upon numerical experimentation and evaluation of the resulting accuracy of the computed function.  Other approaches to computing $N$ have been suggested in the literature; we found that those methods gave rise to unnecessarily long runtimes.
 
@@ -577,17 +577,17 @@ Validating the correctness of a library of math functions is equally important a
 The angular differential equation \cref{eq:MathieuAngular} may be rewritten 
 \begin{equation}
 	r = \frac{\partial^2 S}{\partial v^2}
-	- (a - 2 q \cos 2v ) S
+	+ (a - 2 q \cos 2v ) S
 	\label{eq:RoundTripAngularODE}
 \end{equation}
-where $r$ is a residual.  Ideally $r=0$, but numerical errors usually prevent this ideal case.  To characterize the error we discretize this equation using a finite-difference formula for the second derivative.  We used a 6th order approximation for the second derivative operator,
-\begin{multline}
-\frac{d^2 S(v)}{d v^2} \approx \Delta^2 S_n = \\
-\frac{(1/90)S_{n+3} - (3/20) S_{n+2} + (3/2) S_{n+1} - (49/18) S_n + (3/2) S_{n-1} - (3/20) S_{n-2} + (1/90) S_{n-3}}{h^2}
-\end{multline}
-where $\Delta^2$ denotes the discretized second-second derivative operator and $h$ is the stepsize.  Using $\Delta^2$ we have an approximate Mathieu angular equation, 
+where $r$ is a residual.  Ideally $r=0$, but numerical errors usually prevent this ideal case.  To characterize the error we discretize this equation using a finite-difference formula for the second derivative.  We used a 4th order approximation,
 \begin{equation}
-	r_n = \Delta^2 S_n - (a - 2 q \cos 2 v_n ) S_n
+\frac{d^2 S(v)}{d v^2} \approx \Delta^2_4 S_n =
+\frac{-(1/12) S_{n+2} + (4/3) S_{n+1} - (5/2) S_n + (4/3) S_{n-1} - (1/12) S_{n-2} }{h^2}
+\end{equation}
+where $\Delta^2_4$ denotes the discretized second-second derivative operator and $h$ is the stepsize.  Using $\Delta^2_4$ we have a finite-difference approximation to the Mathieu angular equation, 
+\begin{equation}
+	r_n = \Delta^2_4 S_n + (a - 2 q \cos 2 v_n ) S_n
 	\label{eq:RoundTripResidualAngular}
 \end{equation}
 Testing using this formula involves selecting a Mathieu order $m$ and parameter $q$, then computing the corresponding eigenvalue $a = a_m(q)$.  We then evaluate (\cref{eq:RoundTripResidualAngular}) to obtain the $r_n$ for varying $m$ and $q$.  Then we compute the absolute RMS error of this residual,
@@ -617,17 +617,17 @@ where $N$ is the number of points computed.  For the angular Mathieus we sample 
 
 \FloatBarrier
 
-A similar check may be performed for the modified functions by using the approximate Mathieu radial equation,
+A similar check may be performed for the modified functions by using the finite-difference Mathieu radial equation,
 \begin{equation}
-	r = \Delta^2 S_n + (a - 2 q \cosh 2 u_n ) S_n
+	r = \Delta^2_4 S_n - (a - 2 q \cosh 2 u_n ) S_n
 	\label{eq:RoundTripResidualRadial}
 \end{equation}
-However, in this case the functions are singular for $u \rightarrow 0$, and the breakpoint where the singularity ends increases with increasing $m$.  This is evident in the plots \cref{fig:Mathieumc1} -- \cref{fig:Mathieums2}.  Therefore, instead of plotting absolute error (which is highly sensitive to the singularity) we plot the relative RMS error
+However, in this case the second-kind functions are singular for $u \rightarrow 0$, and the breakpoint where the singularity ends increases with increasing $m$.  This is evident in the plots \cref{fig:Mathieumc1} -- \cref{fig:Mathieums2}.  Therefore, instead of plotting absolute error (which is highly sensitive to the singularity) we plot the relative RMS error
 \begin{equation}
 	err = \sqrt{ \frac{1}{N} \sum_{n=1}^N \left( r_n / S_n \right)^2 }
 	\label{eq:RelErr}
 \end{equation}
-For the radial Mathieus we sample the functions at 100 points in the domain $u = [1, 8]$.  This domain is chosen because the functions oscillate increasingly wildly as $u_n \rightarrow \infty$, so a finite-difference approximation becomes increasingly unreliable.  Moreover, the modified functions of the second kind go to infinity for $u_n \rightarrow 0$, so we need to cut off the sample domain at the low end.
+For the radial Mathieus we sample the functions at 100 points in the domain $u = [1, 5]$.  This domain is chosen because the functions oscillate increasingly wildly as $u_n \rightarrow \infty$, so a finite-difference approximation becomes increasingly unreliable.  Moreover, the modified functions of the second kind go to infinity for $u_n \rightarrow 0$, so we need to cut off the sample domain at the low end.
 
 One could certainly quibble that plotting relative error hides inaccuracy.  However, the goal of these plots is to show that the implementation's output remains sane while the function itself is going singular.  Demonstrating the relative error remains small compared to the function itself which is zooming down to $-\infty$ is a valid characterization of sanity.  The relative error plots are shown in \cref{fig:RTErrMod1} -- \cref{fig:RTErrMod2}.
 \begin{figure}[htb]
@@ -643,7 +643,7 @@ One could certainly quibble that plotting relative error hides inaccuracy.  Howe
 		\includegraphics[width=\textwidth]{RoundTripErr_Ms1.png}
 		\caption{Round trip error for $Ms^{(1)}$.}
 	\end{subfigure}
-	\caption{Round trip error for the modified functions of the first kind.}
+	\caption{Round trip error for the modified functions of the first kind computed using stepsize $h = 1e-5$.}
 	\label{fig:RTErrMod1}
 \end{figure}
 \begin{figure}[htbp]
@@ -659,7 +659,7 @@ One could certainly quibble that plotting relative error hides inaccuracy.  Howe
 		\includegraphics[width=\textwidth]{RoundTripErr_Ms2.png}
 		\caption{Round trip error for $Ms^{(2)}$.}
 	\end{subfigure}
-	\caption{Round trip error for the modified functions of the second kind.}
+	\caption{Round trip error for the modified functions of the second kind computed using stepsize $h = 1e-5$.}
 	\label{fig:RTErrMod2}
 \end{figure}
 
@@ -672,11 +672,11 @@ The modified Mathieu functions obey a Wronskian of the form
 	\mathcal{W}( Mx^{(1)}_m, Mx^{(2)}_m) = \frac{2}{\pi}
 	\label{eq:WronskianModFcns}
 \end{equation}
-where $Mx = Mc, Ms$.  Since the Mathieu implementation returns both the modified function and its derivative, computing the Wronskian is easy.  In \cref{fig:WronskianSame} -- \cref{fig:WronskianOpposite} we plot the absolute RMS error,
+where $Mx = Mc, Ms$.  Since the Mathieu implementation returns both the modified function and its derivative, computing the Wronskian is easy.  In \cref{fig:WronskianSame} -- \cref{fig:WronskianSame} we plot the absolute RMS error,
 \begin{equation}
 	err = \sqrt{ \frac{1}{N} \sum_{n=1}^N \left( \mathcal{W}( Mx^{(1)}_m, Mx^{(2)}_m) - \frac{2}{\pi} \right)^2 }
 \end{equation}
-computed for different $m$ and $q$ values.
+computed for different $m$ and $q$ values.  The sample domain is $u \in [2,10]$.
  \begin{figure}[htb]
  	\centering
  	\begin{subfigure}{0.45\textwidth}
@@ -690,32 +690,17 @@ computed for different $m$ and $q$ values.
  		\includegraphics[width=\textwidth]{wronskian_Ms1_Ms2.png}
 		\caption{Wronskian err $\mathcal{W}( Ms^{(1)}_m, Ms^{(2)}_m) - 2/\pi$.}
  	\end{subfigure}
- 	\caption{Absolute RMS errors of Wronskian between modified functions of the same handedness (even, odd).}
+ 	\caption{Absolute RMS errors of Wronskian between modified Mathieu functions.}
  	\label{fig:WronskianSame}
  \end{figure}
-  \begin{figure}[htb]
- 	\centering
- 	\begin{subfigure}{0.45\textwidth}
- 		\centering
- 		\includegraphics[width=\textwidth]{wronskian_Mc1_Ms2.png}
- 		\caption{Wronskian err $\mathcal{W}( Mc^{(1)}_m, Ms^{(2)}_m) - 2/\pi$.}
- 	\end{subfigure}
- 	\hfill
- 	\begin{subfigure}{0.45\textwidth}
- 		\centering
- 		\includegraphics[width=\textwidth]{wronskian_Ms1_Mc2.png}
- 		\caption{Wronskian err $\mathcal{W}( Ms^{(1)}_m, Mc^{(2)}_m) - 2/\pi$.}
- 	\end{subfigure}
- 	\caption{Absolute RMS errors of Wronskian between modified functions of opposite handedness.}
- 	\label{fig:WronskianOpposite}
- \end{figure}
+
  
  \FloatBarrier
  
  \subsection{Check of first derivative using finite differences}
  This implementation of the Mathieu functions returns both the function value and its first
  derivative.  As a sanity check, we computed a first derivative approximation from the
- function value using a first-order finite difference formula,
+ function value using a sixth-order finite difference formula,
  \begin{multline}
  % −1/60        3/20    −3/4    0       3/4     −3/20   1/60
  \frac{d S(v)}{d v} \approx \Delta S_n = \\
@@ -726,7 +711,7 @@ The residual is
 r = \Delta S_n - S'_n
 \label{eq:FirstDerivResidual}
 \end{equation}
-where $S'$ is the first derivative returned from the implementation.  For the angular functions we sample over the domain $[-\pi, \pi]$ and plot the absolute RMS error of the residual per \cref{eq:AbsErr} in \cref{fig:FirstDerivAngFcns}.
+where $S'$ is the first derivative returned from the implementation.  For the angular functions we sample over the domain $v = [-\pi, \pi]$ and plot the absolute RMS error of the residual per \cref{eq:AbsErr} in \cref{fig:FirstDerivAngFcns}.
   \begin{figure}[htb]
 	\centering
 	\begin{subfigure}{0.45\textwidth}
@@ -740,13 +725,13 @@ where $S'$ is the first derivative returned from the implementation.  For the an
 		\includegraphics[width=\textwidth]{FirstDerivVsFD_se.png}
 		\caption{Mathieu $se$}
 	\end{subfigure}
-	\caption{Absolute RMS difference between the first derivative returned by the implementation and a 6th order finite-difference approximation.}
+	\caption{Absolute RMS difference between the first derivative returned by the implementation and a 4th order finite-difference approximation with stepsize $h = 1e-4$.}
 	\label{fig:FirstDerivAngFcns}
 \end{figure}
 
 \FloatBarrier
 
-For the radial functions we sample over $[XX,XX]$ and plot the relative RMS error of the residual per \cref{eq:RelErr} in \cref{fig:FirstDerivMod1Fcns} -- \cref{fig:FirstDerivMod2Fcns}.
+For the radial functions we sample over $u \in [1,5]$ and plot the relative RMS error of the residual per \cref{eq:RelErr} in \cref{fig:FirstDerivMod1Fcns} -- \cref{fig:FirstDerivMod2Fcns}.
 \begin{figure}[htb]
 	\centering
 	\begin{subfigure}{0.45\textwidth}
@@ -760,7 +745,7 @@ For the radial functions we sample over $[XX,XX]$ and plot the relative RMS erro
 		\includegraphics[width=\textwidth]{FirstDerivVsFD_ms1.png}
 		\caption{Mathieu $Ms^{(1)}$}
 	\end{subfigure}
-	\caption{Relative RMS difference between the first derivative returned by the implementation and a 6th order finite-difference approximation.}
+	\caption{Relative RMS difference between the first derivative returned by the implementation and a 4th order finite-difference approximation with stepsize $h = 3e-6$.}
 	\label{fig:FirstDerivMod1Fcns}
 \end{figure}
 \begin{figure}[htb]
@@ -776,7 +761,7 @@ For the radial functions we sample over $[XX,XX]$ and plot the relative RMS erro
 		\includegraphics[width=\textwidth]{FirstDerivVsFD_ms2.png}
 		\caption{Mathieu $Ms^{(2)}$}
 	\end{subfigure}
-	\caption{Relative RMS difference between the first derivative returned by the implementation and a 6th order finite-difference approximation.}
+	\caption{Relative RMS difference between the first derivative returned by the implementation and a 4th order finite-difference approximation with stepsize $h = 3e-6$.}
 	\label{fig:FirstDerivMod2Fcns}
 \end{figure}
 
@@ -816,17 +801,28 @@ In his test, Shin places a point source of waves at a location and then samples 
 \end{equation}
 Note that Shin plots the error in dB units.
 
-Dr. Shin kindly provided a plot produced when running his test function on my Mathieu implementation; his plot is shown in \cref{ShinFigure} below.
+Dr. Shin kindly provided a plot produced when running his test function on my Mathieu implementation; his plot is shown in \cref{fig:ShinFigure} below.  He tested my implementation against his known-good implementation.  The error in my implementation is above his for small $q$ values, but remains below $1e-27$ which is fine for applications.
 \begin{figure}[h]
 	\centering
 %	\includegraphics[width=0.5\columnwidth]{ShinTestFigure.png}
-	\includegraphics[width=0.5\columnwidth]{NoImage.jpg}
-	\caption{Error plot produced using \cref{eq:ShinTest} and \cref{eq:ShinError}}
+	\includegraphics[width=0.5\columnwidth]{ComparisonWithShin.png}
+	\caption{Error plot produced using \cref{eq:ShinTest} and \cref{eq:ShinError} (courtesy of Ho-Chul Shin).}
 	\label{fig:ShinFigure}
 \end{figure}
 
  \FloatBarrier
  
+%------------------------------------------------------
+\section{Conclusions}
+\smallskip
+I have presented details about a C++ implementation of the Mathieu functions for real input arguments.  The goal of this work is to replace the existing implementation of the Mathieus in SciPy.  My implementation is based on current best-practices, in particular:
+\begin{itemize}
+	\item I use an eigenvalue decomposition to compute the expansion coefficients for both the angular and the radial functions.  (The previous SciPy implementation used a rootfinder.)
+	\item I use a Fourier-Bessel product series to compute the radial functions.  (The previous SciPy implementation did too.)
+	\item The orders of the Bessel functions used to compute the radial functions is determined by the so-called "max-s" method.  (The previous SciPy implementation did not.)
+\end{itemize}
+I have presented a set of tests used to verify that the functions return correct results.  The finite difference tests show I get between 5 -- 10 good digits for the angular functions over a domain of $m \in [0, 50]$ and $q \in [1e-4, 1e4]$ and between 0 -- 5 digits for the radial functions over the same domain.  The finite difference tests themselves are limited in their accuracy since they are an approximation relaying on a finite step size.  Nonetheless, they show that the implementation doesn't return wildly wrong values.  Wronskian tests of the modified functions suggest the number of good digits is higher -- in the 10 -- 20 digit range over the same domain.
+
  
 %------------------------------------------------------
 \section{Acknowledgements}
