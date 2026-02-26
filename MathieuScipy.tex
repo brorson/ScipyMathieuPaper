@@ -348,6 +348,7 @@ Similar to the angular function derivatives, the radial function derivatives are
 	Ms^{(i)}_{2m+1}(q,u) = (-1)^m
 	\sqrt{q} \sum_{k=0}^\infty  (-1)^k
 	\frac{B^{(2m+1)}_{2k+1}(q)}{B^{(2m+1)}_{2c+1}(q)} \\
+			\times 
 	\Bigg(
 	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c+1}(\sqrt{q} e^{u}) 
 	- J_{k+c+1}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
@@ -361,6 +362,7 @@ Similar to the angular function derivatives, the radial function derivatives are
 		Ms^{(i)}_{2m+2}(q,u) = (-1)^m
 		\sqrt{q} \sum_{k=0}^\infty  (-1)^k
 		\frac{B^{(2m+2)}_{2k+2}(q)}{B^{(2m+2)}_{2c+2}(q)} \\
+				\times 
 	    \Bigg(
     	e^{u} \Big( J_{k-c}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k+c+2}(\sqrt{q} e^{u}) 
     	- J_{k+c+2}(\sqrt{q} e^{-u}) (Z^{(i)})'_{k-c}(\sqrt{q} e^{u}) \Big) \\
@@ -386,7 +388,7 @@ The new Mathieu implementation uses the above sums to compute the desired functi
 			& \textbf{Internal C++ call/return} \\ 
 			\hline
 			$a_m(q)$ & a \mbox{= mathieu\_a(m,q)} & int mathieu\_a(m, q, *a) \\ 
-			$b_m(q)$ & b \mbox{= mathieu\_b(m,q)} & int mathieu\_b(m, q, *a) \\ 
+			$b_m(q)$ & b \mbox{= mathieu\_b(m,q)} & int mathieu\_b(m, q, *b) \\ 
 			
 			\hline
 			$ce_m(q,x)$ & ce,cederiv \mbox{= mathieu\_cem(m,q,x)} & int mathieu\_ce(m,q,x,*ce,*ced) \\ 
@@ -701,11 +703,11 @@ computed for different $m$ and $q$ values.  The sample domain is $u \in [2,10]$.
  This implementation of the Mathieu functions returns both the function value and its first
  derivative.  As a sanity check, we computed a first derivative approximation from the
  function value using a fourth-order finite difference formula,
- \begin{multline}
+ \begin{equation}
  % 1/12 	−2/3 	0 	2/3 	−1/12
  \frac{d S(v)}{d v} \approx \Delta S_n = \\
- \frac{(1/12) S_{n+2} - (2/3) S_{n+1} + (2/3) S_{n-1} - (1/12) S_{n-2}}{h}
- \end{multline}
+ \frac{-(1/12) S_{n+2} + (2/3) S_{n+1} - (2/3) S_{n-1} + (1/12) S_{n-2}}{h}
+ \end{equation}
 The residual is
 \begin{equation}
 r = \Delta S_n - S'_n
@@ -776,13 +778,13 @@ Hankel function $H_0^{(1)}(\mathbf{r})$ as a sum over Mathieu angular and radial
 \begin{aligned}
 	\frac{1}{2}H_0^{(1)}(k|\mathbf{r} - \mathbf{r}_0|) = &
 	\\
-	\sum_{n=0}^\infty & ce_n(v_0, q) ce_n(q, v) \cdot
+	\sum_{n=0}^\infty & ce_n(q, v_0) ce_n(q, v) \cdot
 	\begin{cases}
 		Mc_n^{(1)}(q, u_0) Mc_n^{(3)}(q, u), & u > u_0, \\
 		Mc_n^{(1)}(q, u) Mc_n^{(3)}(q, u_0), & u < u_0,
 	\end{cases}
 	\\
-	+ \sum_{n=1}^\infty & se_n(v_0, q)se_n(q, v) \cdot
+	+ \sum_{n=1}^\infty & se_n(q, v_0)se_n(q, v) \cdot
 	\begin{cases}
 		Ms_n^{(1)}(q, u_0) Ms_n^{(3)}(q, u), & u > u_0, \\
 		Ms_n^{(1)}(q, u) Ms_n^{(3)}(q, u_0), & u < u_0
